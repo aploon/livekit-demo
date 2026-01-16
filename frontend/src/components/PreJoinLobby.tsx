@@ -24,6 +24,7 @@ export default function PreJoinLobby({ onJoin }: PreJoinLobbyProps) {
   const [activeTab, setActiveTab] = useState<'meetings' | 'calls'>('meetings');
 
   const handleNewMeeting = () => {
+    // Générer un nom d'utilisateur par défaut si non défini
     if (!userName.trim()) {
       const defaultName = `User-${Math.random().toString(36).substr(2, 9)}`;
       setUserName(defaultName);
@@ -35,8 +36,19 @@ export default function PreJoinLobby({ onJoin }: PreJoinLobbyProps) {
   };
 
   const handleJoinWithCode = () => {
-    if (roomName.trim() && userName.trim()) {
-      onJoin(roomName, userName);
+    // Utiliser un nom par défaut si non fourni
+    const finalUserName = userName.trim() || `User-${Math.random().toString(36).substr(2, 9)}`;
+    if (roomName.trim()) {
+      onJoin(roomName, finalUserName);
+    }
+  };
+
+  const handleJoinFromPopup = () => {
+    // Utiliser un nom par défaut si non fourni
+    const finalUserName = userName.trim() || `User-${Math.random().toString(36).substr(2, 9)}`;
+    if (roomName.trim()) {
+      setShowMeetingReady(false);
+      onJoin(roomName, finalUserName);
     }
   };
 
@@ -126,34 +138,47 @@ export default function PreJoinLobby({ onJoin }: PreJoinLobbyProps) {
               </p>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleNewMeeting}
-                className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors shadow-sm"
-              >
-                <VideoIcon className="w-5 h-5" />
-                <Plus className="w-5 h-5" />
-                <span>Nouvelle réunion</span>
-              </button>
-              <div className="flex-1 flex items-center bg-white border border-gray-300 rounded-full px-4 py-3 hover:shadow-md transition-shadow">
-                <Grid3x3 className="w-5 h-5 text-gray-500 mr-2" />
-                <input
-                  type="text"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="Saisir un code ou un lien"
-                  className="flex-1 outline-none text-gray-700 placeholder-gray-400"
-                  onKeyPress={(e) => e.key === 'Enter' && handleJoinWithCode()}
-                />
-              </div>
-              {roomName.trim() && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
                 <button
-                  onClick={handleJoinWithCode}
-                  className="px-6 py-3 text-blue-600 hover:bg-blue-50 rounded-full font-medium transition-colors"
+                  onClick={handleNewMeeting}
+                  className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors shadow-sm"
                 >
-                  Participer
+                  <VideoIcon className="w-5 h-5" />
+                  <Plus className="w-5 h-5" />
+                  <span>Nouvelle réunion</span>
                 </button>
-              )}
+                <div className="flex-1 flex items-center bg-white border border-gray-300 rounded-full px-4 py-3 hover:shadow-md transition-shadow">
+                  <Grid3x3 className="w-5 h-5 text-gray-500 mr-2" />
+                  <input
+                    type="text"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    placeholder="Saisir un code ou un lien"
+                    className="flex-1 outline-none text-gray-700 placeholder-gray-400"
+                    onKeyPress={(e) => e.key === 'Enter' && handleJoinWithCode()}
+                  />
+                </div>
+                {roomName.trim() && (
+                  <button
+                    onClick={handleJoinWithCode}
+                    className="px-6 py-3 text-blue-600 hover:bg-blue-50 rounded-full font-medium transition-colors"
+                  >
+                    Participer
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="flex-1 flex items-center bg-white border border-gray-300 rounded-full px-4 py-3 hover:shadow-md transition-shadow">
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Votre nom (optionnel)"
+                    className="flex-1 outline-none text-gray-700 placeholder-gray-400"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="border-t border-gray-200 pt-8">
@@ -196,16 +221,11 @@ export default function PreJoinLobby({ onJoin }: PreJoinLobbyProps) {
             </button>
             <h2 className="text-xl font-normal text-gray-900 mb-4">Votre réunion est prête</h2>
             <button
-              onClick={() => {
-                setShowMeetingReady(false);
-                if (userName.trim() && roomName.trim()) {
-                  onJoin(roomName, userName);
-                }
-              }}
+              onClick={handleJoinFromPopup}
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4"
             >
-              <Plus className="w-5 h-5" />
-              <span>Ajouter des participants</span>
+              <VideoIcon className="w-5 h-5" />
+              <span>Rejoindre maintenant</span>
             </button>
             <p className="text-sm text-gray-600 mb-3">
               Ou partagez ce lien avec les personnes que vous souhaitez inviter à la réunion
