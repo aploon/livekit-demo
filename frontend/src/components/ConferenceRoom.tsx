@@ -11,15 +11,7 @@ import {
   Video,
   VideoOff,
   Monitor,
-  Grid3x3,
-  Smile,
-  MessageSquare,
-  Hand,
-  MoreVertical,
   PhoneOff,
-  Info,
-  Users,
-  Lock,
   Copy,
   X,
 } from 'lucide-react';
@@ -39,48 +31,64 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
+  // Synchroniser l'état avec le participant local
+  useEffect(() => {
+    if (localParticipant) {
+      // Initialiser l'état basé sur l'état réel du participant
+      setIsMuted(!localParticipant.isMicrophoneEnabled);
+      setIsVideoOff(!localParticipant.isCameraEnabled);
+      
+      // Vérifier périodiquement l'état pour rester synchronisé
+      const interval = setInterval(() => {
+        if (localParticipant) {
+          setIsMuted(!localParticipant.isMicrophoneEnabled);
+          setIsVideoOff(!localParticipant.isCameraEnabled);
+        }
+      }, 500);
+
+      return () => clearInterval(interval);
+    }
+  }, [localParticipant]);
+
   const toggleMic = async () => {
     if (localParticipant) {
-      if (isMuted) {
-        await localParticipant.setMicrophoneEnabled(true);
-        setIsMuted(false);
-      } else {
-        await localParticipant.setMicrophoneEnabled(false);
-        setIsMuted(true);
+      try {
+        const newState = !isMuted;
+        await localParticipant.setMicrophoneEnabled(newState);
+        setIsMuted(!newState);
+      } catch (error) {
+        console.error('Erreur lors du changement du micro:', error);
       }
     }
   };
 
   const toggleVideo = async () => {
     if (localParticipant) {
-      if (isVideoOff) {
-        await localParticipant.setCameraEnabled(true);
-        setIsVideoOff(false);
-      } else {
-        await localParticipant.setCameraEnabled(false);
-        setIsVideoOff(true);
+      try {
+        const newState = !isVideoOff;
+        await localParticipant.setCameraEnabled(newState);
+        setIsVideoOff(!newState);
+      } catch (error) {
+        console.error('Erreur lors du changement de la caméra:', error);
       }
     }
   };
 
   const toggleScreenShare = async () => {
     if (localParticipant) {
-      if (isScreenSharing) {
-        await localParticipant.setScreenShareEnabled(false);
-        setIsScreenSharing(false);
-      } else {
-        await localParticipant.setScreenShareEnabled(true);
-        setIsScreenSharing(true);
+      try {
+        if (isScreenSharing) {
+          await localParticipant.setScreenShareEnabled(false);
+          setIsScreenSharing(false);
+        } else {
+          await localParticipant.setScreenShareEnabled(true);
+          setIsScreenSharing(true);
+        }
+      } catch (error) {
+        console.error('Erreur lors du partage d\'écran:', error);
       }
     }
   };
-
-  useEffect(() => {
-    if (localParticipant) {
-      setIsMuted(!localParticipant.isMicrophoneEnabled);
-      setIsVideoOff(!localParticipant.isCameraEnabled);
-    }
-  }, [localParticipant]);
 
   const getCurrentTime = () => {
     const now = new Date();
@@ -96,7 +104,7 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
         <span className="text-gray-400">{roomName}</span>
       </div>
 
-      {/* Center - Main controls */}
+      {/* Center - Main controls (seulement ceux qui fonctionnent) */}
       <div className="flex items-center space-x-2">
         <button
           onClick={toggleMic}
@@ -105,6 +113,7 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
               ? 'bg-red-600 hover:bg-red-700'
               : 'bg-gray-700 hover:bg-gray-600'
           }`}
+          title={isMuted ? 'Activer le micro' : 'Désactiver le micro'}
         >
           {isMuted ? (
             <MicOff className="w-5 h-5 text-white" />
@@ -120,6 +129,7 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
               ? 'bg-red-600 hover:bg-red-700'
               : 'bg-gray-700 hover:bg-gray-600'
           }`}
+          title={isVideoOff ? 'Activer la caméra' : 'Désactiver la caméra'}
         >
           {isVideoOff ? (
             <VideoOff className="w-5 h-5 text-white" />
@@ -135,59 +145,22 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
               ? 'bg-blue-600 hover:bg-blue-700'
               : 'bg-gray-700 hover:bg-gray-600'
           }`}
+          title="Partager l'écran"
         >
           <Monitor className="w-5 h-5 text-white" />
-        </button>
-
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <Grid3x3 className="w-5 h-5 text-white" />
-        </button>
-
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <Smile className="w-5 h-5 text-white" />
-        </button>
-
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <MessageSquare className="w-5 h-5 text-white" />
-        </button>
-
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <Hand className="w-5 h-5 text-white" />
-        </button>
-
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <MoreVertical className="w-5 h-5 text-white" />
         </button>
 
         <button
           onClick={onLeave}
           className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-colors"
+          title="Quitter la réunion"
         >
           <PhoneOff className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      {/* Right side - Additional controls */}
-      <div className="flex items-center space-x-2">
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <Info className="w-5 h-5 text-white" />
-        </button>
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors relative">
-          <Users className="w-5 h-5 text-white" />
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">
-            1
-          </span>
-        </button>
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <MessageSquare className="w-5 h-5 text-white" />
-        </button>
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <Grid3x3 className="w-5 h-5 text-white" />
-        </button>
-        <button className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors">
-          <Lock className="w-5 h-5 text-white" />
-        </button>
-      </div>
+      {/* Right side - Empty for now */}
+      <div className="w-32"></div>
     </div>
   );
 }
@@ -229,7 +202,6 @@ export default function ConferenceRoom({
           <GoogleMeetVideoInterface />
           <RoomAudioRenderer />
         </div>
-        {/* Control Bar - doit être à l'intérieur du contexte LiveKitRoom */}
         <ControlBarButtons onLeave={onLeave} roomName={roomName} />
       </LiveKitRoom>
 
@@ -244,12 +216,8 @@ export default function ConferenceRoom({
               <X className="w-5 h-5 text-gray-600" />
             </button>
             <h2 className="text-xl font-normal text-gray-900 mb-4">Votre réunion est prête</h2>
-            <button className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors mb-4">
-              <Users className="w-5 h-5" />
-              <span>Ajouter des participants</span>
-            </button>
             <p className="text-sm text-gray-600 mb-3">
-              Ou partagez ce lien avec les personnes que vous souhaitez inviter à la réunion
+              Partagez ce lien avec les personnes que vous souhaitez inviter
             </p>
             <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
               <span className="flex-1 text-sm text-gray-700 truncate">{meetingLink}</span>
@@ -259,10 +227,6 @@ export default function ConferenceRoom({
               >
                 <Copy className="w-4 h-4 text-gray-600" />
               </button>
-            </div>
-            <div className="flex items-start space-x-2 text-xs text-gray-600 mb-4">
-              <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>Les personnes utilisant le lien de cette réunion doivent obtenir votre autorisation pour y participer.</span>
             </div>
             <div className="pt-4 border-t border-gray-200">
               <p className="text-xs text-gray-600">
