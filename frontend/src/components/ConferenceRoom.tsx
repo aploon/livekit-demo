@@ -3,6 +3,7 @@ import {
   LiveKitRoom,
   RoomAudioRenderer,
   useLocalParticipant,
+  useTracks,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
 import {
@@ -14,8 +15,11 @@ import {
   PhoneOff,
   Copy,
   X,
+  MessageSquare,
 } from 'lucide-react';
+import { Track } from 'livekit-client';
 import GoogleMeetVideoInterface from './GoogleMeetVideoInterface';
+import ChatPanel from './ChatPanel';
 
 interface ConferenceRoomProps {
   token: string;
@@ -25,11 +29,25 @@ interface ConferenceRoomProps {
   onLeave: () => void;
 }
 
-function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomName: string }) {
+function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop }: { 
+  onLeave: () => void; 
+  roomName: string;
+  onChatToggle: () => void;
+  onScreenShareStop?: () => void;
+}) {
   const { localParticipant } = useLocalParticipant();
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  
+  // Vérifier l'état du partage d'écran
+  const screenShareTracks = useTracks([
+    { source: Track.Source.ScreenShare, withPlaceholder: false },
+  ]);
+
+  useEffect(() => {
+    setIsScreenSharing(screenShareTracks.length > 0);
+  }, [screenShareTracks]);
 
   // Synchroniser l'état avec le participant local
   useEffect(() => {
@@ -80,6 +98,9 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
         if (isScreenSharing) {
           await localParticipant.setScreenShareEnabled(false);
           setIsScreenSharing(false);
+          if (onScreenShareStop) {
+            onScreenShareStop();
+          }
         } else {
           await localParticipant.setScreenShareEnabled(true);
           setIsScreenSharing(true);
@@ -96,7 +117,7 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
   };
 
   return (
-    <div className="h-16 bg-[#202124] flex items-center justify-between px-4">
+    <div className="h-16 bg-[#202124] flex items-center justify-between px-4 relative z-50">
       {/* Left side - Time and meeting code */}
       <div className="flex items-center space-x-4 text-white text-sm">
         <span>{getCurrentTime()}</span>
@@ -104,7 +125,7 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
         <span className="text-gray-400">{roomName}</span>
       </div>
 
-      {/* Center - Main controls (seulement ceux qui fonctionnent) */}
+      {/* Center - Main controls */}
       <div className="flex items-center space-x-2">
         <button
           onClick={toggleMic}
@@ -145,9 +166,17 @@ function ControlBarButtons({ onLeave, roomName }: { onLeave: () => void; roomNam
               ? 'bg-blue-600 hover:bg-blue-700'
               : 'bg-gray-700 hover:bg-gray-600'
           }`}
-          title="Partager l'écran"
+          title={isScreenSharing ? "Arrêter le partage d'écran" : "Partager l'écran"}
         >
           <Monitor className="w-5 h-5 text-white" />
+        </button>
+
+        <button
+          onClick={onChatToggle}
+          className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
+          title="Ouvrir le chat"
+        >
+          <MessageSquare className="w-5 h-5 text-white" />
         </button>
 
         <button
@@ -174,6 +203,7 @@ export default function ConferenceRoom({
 }: ConferenceRoomProps) {
   const [showMeetingReady, setShowMeetingReady] = useState(true);
   const [meetingLink, setMeetingLink] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -185,7 +215,7 @@ export default function ConferenceRoom({
   };
 
   return (
-    <div className="h-screen w-screen bg-[#202124] flex flex-col">
+    <div className="h-screen w-screen bg-[#202124] flex flex-col relative">
       <LiveKitRoom
         video={true}
         audio={true}
@@ -198,11 +228,21 @@ export default function ConferenceRoom({
         data-lk-theme="default"
         className="flex-1 flex flex-col min-h-0"
       >
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 relative">
           <GoogleMeetVideoInterface />
           <RoomAudioRenderer />
         </div>
-        <ControlBarButtons onLeave={onLeave} roomName={roomName} />
+        <ControlBarButtons 
+          onLeave={onLeave} 
+          roomName={roomName} 
+          onChatToggle={() => setIsChatOpen(!isChatOpen)}
+        />
+        {/* Chat Panel - doit être à l'intérieur du contexte LiveKitRoom */}
+        <ChatPanel 
+          isOpen={isChatOpen} 
+          onClose={() => setIsChatOpen(false)}
+          userName={userName}
+        />
       </LiveKitRoom>
 
       {/* Pop-up "Votre réunion est prête" */}

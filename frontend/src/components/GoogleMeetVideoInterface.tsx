@@ -5,9 +5,12 @@ import {
   useTracks,
   VideoTrack,
   TrackReference,
+  GridLayout,
+  ParticipantTile,
+  useLocalParticipant,
 } from '@livekit/components-react';
 import { Track, Participant } from 'livekit-client';
-import { Users } from 'lucide-react';
+import { Users, X } from 'lucide-react';
 
 interface ParticipantAvatarProps {
   participant: Participant;
@@ -81,30 +84,67 @@ function ParticipantVideo({ participant, isLocal = false, isMain = false }: Part
 
 export default function GoogleMeetVideoInterface() {
   const participants = useParticipants();
+  const { localParticipant } = useLocalParticipant();
   const screenShareTracks = useTracks([
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
 
-  const { localParticipant, remoteParticipants } = useMemo(() => {
-    const local = participants.find((p) => p.isLocal);
+  const cameraTracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: true },
+  ]);
+
+  const { remoteParticipants } = useMemo(() => {
     const remote = participants.filter((p) => !p.isLocal);
     return {
-      localParticipant: local,
       remoteParticipants: remote,
     };
   }, [participants]);
 
   const hasScreenShare = screenShareTracks.length > 0;
   const totalParticipants = participants.length;
+  const screenShareParticipant = hasScreenShare
+    ? screenShareTracks[0]?.participant
+    : null;
+
+  const handleStopScreenShare = async () => {
+    if (localParticipant) {
+      try {
+        await localParticipant.setScreenShareEnabled(false);
+      } catch (error) {
+        console.error('Erreur lors de l\'arrêt du partage d\'écran:', error);
+      }
+    }
+  };
 
   return (
     <div className="h-full w-full flex flex-col bg-[#202124] relative">
       {/* Zone principale de vidéo */}
-      <div className="flex-1 flex items-center justify-center p-4 relative">
+      <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
         {hasScreenShare ? (
           // Mode partage d'écran
-          <div className="w-full h-full flex flex-col">
-            <div className="flex-1 rounded-lg overflow-hidden bg-black">
+          <div className="w-full h-full flex flex-col relative">
+            {/* Barre de contrôle pour le partage d'écran */}
+            {screenShareParticipant && (
+              <div className="absolute top-4 left-4 right-4 z-40 bg-black/80 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center space-x-3 text-white text-sm">
+                  <span className="font-medium">
+                    {screenShareParticipant.isLocal
+                      ? 'Vous partagez votre écran'
+                      : `${screenShareParticipant.name || screenShareParticipant.identity} partage son écran`}
+                  </span>
+                </div>
+                {screenShareParticipant.isLocal && (
+                  <button
+                    onClick={handleStopScreenShare}
+                    className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+                  >
+                    <X className="w-4 h-4" />
+                    <span>Arrêter le partage</span>
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="flex-1 rounded-lg overflow-hidden bg-black mt-12">
               {screenShareTracks.map((track) => (
                 <VideoTrack
                   key={track.publication?.trackSid}
@@ -150,42 +190,17 @@ export default function GoogleMeetVideoInterface() {
             )}
           </div>
         ) : (
-          // Plusieurs participants : grille adaptative
-          <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4 max-w-7xl">
-            {remoteParticipants.length > 0 ? (
-              <>
-                {remoteParticipants[0] && (
-                  <div className="md:col-span-2">
-                    <ParticipantVideo participant={remoteParticipants[0]} isMain={true} />
-                  </div>
-                )}
-                {remoteParticipants.length > 1 && (
-                  <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {remoteParticipants.slice(1).map((participant) => (
-                      <ParticipantVideo key={participant.identity} participant={participant} />
-                    ))}
-                    {localParticipant && (
-                      <ParticipantVideo participant={localParticipant} isLocal={true} />
-                    )}
-                  </div>
-                )}
-                {remoteParticipants.length === 1 && localParticipant && (
-                  <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <ParticipantVideo participant={localParticipant} isLocal={true} />
-                  </div>
-                )}
-              </>
-            ) : localParticipant ? (
-              <div className="md:col-span-2">
-                <ParticipantVideo participant={localParticipant} isLocal={true} isMain={true} />
-              </div>
-            ) : null}
+          // Plusieurs participants : utiliser GridLayout pour une meilleure structure
+          <div className="w-full h-full">
+            <GridLayout tracks={cameraTracks} className="h-full">
+              <ParticipantTile />
+            </GridLayout>
           </div>
         )}
 
         {/* Indicateur de nombre de participants */}
         {totalParticipants > 0 && (
-          <div className="absolute top-6 right-6 flex items-center space-x-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full">
+          <div className="absolute top-6 right-6 z-30 flex items-center space-x-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full">
             <Users className="w-4 h-4 text-white" />
             <span className="text-xs text-white">
               {totalParticipants} {totalParticipants > 1 ? 'participants' : 'participant'}
