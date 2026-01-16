@@ -53,27 +53,36 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
   useEffect(() => {
     if (localParticipant) {
       // Initialiser l'état basé sur l'état réel du participant
-      setIsMuted(!localParticipant.isMicrophoneEnabled);
-      setIsVideoOff(!localParticipant.isCameraEnabled);
+      const updateState = () => {
+        setIsMuted(!localParticipant.isMicrophoneEnabled);
+        setIsVideoOff(!localParticipant.isCameraEnabled);
+      };
+      
+      updateState();
+      
+      // Écouter les événements de changement de track
+      localParticipant.on('trackPublished', updateState);
+      localParticipant.on('trackUnpublished', updateState);
       
       // Vérifier périodiquement l'état pour rester synchronisé
-      const interval = setInterval(() => {
-        if (localParticipant) {
-          setIsMuted(!localParticipant.isMicrophoneEnabled);
-          setIsVideoOff(!localParticipant.isCameraEnabled);
-        }
-      }, 500);
+      const interval = setInterval(updateState, 200);
 
-      return () => clearInterval(interval);
+      return () => {
+        localParticipant.off('trackPublished', updateState);
+        localParticipant.off('trackUnpublished', updateState);
+        clearInterval(interval);
+      };
     }
   }, [localParticipant]);
 
   const toggleMic = async () => {
     if (localParticipant) {
       try {
-        const newState = !isMuted;
-        await localParticipant.setMicrophoneEnabled(newState);
-        setIsMuted(!newState);
+        // Inverser l'état actuel
+        const currentMuted = !localParticipant.isMicrophoneEnabled;
+        const newEnabled = currentMuted; // Si muet, on active; si actif, on désactive
+        await localParticipant.setMicrophoneEnabled(newEnabled);
+        // L'état sera mis à jour automatiquement par l'effet
       } catch (error) {
         console.error('Erreur lors du changement du micro:', error);
       }
@@ -83,9 +92,11 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
   const toggleVideo = async () => {
     if (localParticipant) {
       try {
-        const newState = !isVideoOff;
-        await localParticipant.setCameraEnabled(newState);
-        setIsVideoOff(!newState);
+        // Inverser l'état actuel
+        const currentVideoOff = !localParticipant.isCameraEnabled;
+        const newEnabled = currentVideoOff; // Si off, on active; si actif, on désactive
+        await localParticipant.setCameraEnabled(newEnabled);
+        // L'état sera mis à jour automatiquement par l'effet
       } catch (error) {
         console.error('Erreur lors du changement de la caméra:', error);
       }
