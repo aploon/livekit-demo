@@ -16,10 +16,13 @@ import {
   Copy,
   X,
   MessageSquare,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { Track } from 'livekit-client';
 import GoogleMeetVideoInterface from './GoogleMeetVideoInterface';
 import ChatPanel from './ChatPanel';
+import PatientInfoPanel from './PatientInfoPanel';
 
 interface ConferenceRoomProps {
   token: string;
@@ -29,8 +32,13 @@ interface ConferenceRoomProps {
   onLeave: () => void;
 }
 
-function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop }: { 
-  onLeave: () => void; 
+function ControlBarButtons({
+  onLeave,
+  roomName,
+  onChatToggle,
+  onScreenShareStop,
+}: {
+  onLeave: () => void;
   roomName: string;
   onChatToggle: () => void;
   onScreenShareStop?: () => void;
@@ -122,18 +130,13 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
     }
   };
 
-  const getCurrentTime = () => {
-    const now = new Date();
-    return now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  };
-
   return (
-    <div className="h-16 bg-[#202124] flex items-center justify-between px-4 relative z-50">
-      {/* Left side - Time and meeting code */}
-      <div className="flex items-center space-x-4 text-white text-sm">
-        <span>{getCurrentTime()}</span>
-        <span className="text-gray-400">•</span>
-        <span className="text-gray-400">{roomName}</span>
+    <div className="h-14 bg-white border-t border-slate-200 flex items-center justify-between px-4 md:px-6 relative z-40">
+      {/* Left side - meeting name */}
+      <div className="flex items-center space-x-2 text-xs text-slate-500">
+        <span className="font-medium text-slate-700">Observation médicale</span>
+        <span className="mx-1 text-slate-300">•</span>
+        <span className="truncate max-w-[120px] md:max-w-xs">{roomName}</span>
       </div>
 
       {/* Center - Main controls */}
@@ -142,8 +145,8 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
           onClick={toggleMic}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             isMuted
-              ? 'bg-red-600 hover:bg-red-700'
-              : 'bg-gray-700 hover:bg-gray-600'
+              ? 'bg-rose-500 hover:bg-rose-600'
+              : 'bg-slate-800 hover:bg-slate-900'
           }`}
           title={isMuted ? 'Activer le micro' : 'Désactiver le micro'}
         >
@@ -158,8 +161,8 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
           onClick={toggleVideo}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             isVideoOff
-              ? 'bg-red-600 hover:bg-red-700'
-              : 'bg-gray-700 hover:bg-gray-600'
+              ? 'bg-rose-500 hover:bg-rose-600'
+              : 'bg-slate-800 hover:bg-slate-900'
           }`}
           title={isVideoOff ? 'Activer la caméra' : 'Désactiver la caméra'}
         >
@@ -174,8 +177,8 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
           onClick={toggleScreenShare}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             isScreenSharing
-              ? 'bg-blue-600 hover:bg-blue-700'
-              : 'bg-gray-700 hover:bg-gray-600'
+              ? 'bg-sky-600 hover:bg-sky-700'
+              : 'bg-slate-800 hover:bg-slate-900'
           }`}
           title={isScreenSharing ? "Arrêter le partage d'écran" : "Partager l'écran"}
         >
@@ -183,24 +186,23 @@ function ControlBarButtons({ onLeave, roomName, onChatToggle, onScreenShareStop 
         </button>
 
         <button
-          onClick={onChatToggle}
-          className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
-          title="Ouvrir le chat"
-        >
-          <MessageSquare className="w-5 h-5 text-white" />
-        </button>
-
-        <button
           onClick={onLeave}
-          className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-colors"
+          className="w-10 h-10 rounded-full bg-rose-600 hover:bg-rose-700 flex items-center justify-center transition-colors ml-1"
           title="Quitter la réunion"
         >
           <PhoneOff className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      {/* Right side - Empty for now */}
-      <div className="w-32"></div>
+      {/* Right side - Chat toggle */}
+      <button
+        onClick={onChatToggle}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        title="Ouvrir le chat"
+      >
+        <MessageSquare className="w-4 h-4" />
+        <span className="hidden sm:inline">Chat</span>
+      </button>
     </div>
   );
 }
@@ -215,6 +217,7 @@ export default function ConferenceRoom({
   const [showMeetingReady, setShowMeetingReady] = useState(true);
   const [meetingLink, setMeetingLink] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isVideoExpanded, setIsVideoExpanded] = useState(false);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -226,7 +229,7 @@ export default function ConferenceRoom({
   };
 
   return (
-    <div className="h-screen w-screen bg-[#202124] flex flex-col relative">
+    <div className="h-screen w-screen bg-slate-100 flex flex-col relative">
       <LiveKitRoom
         video={true}
         audio={true}
@@ -239,21 +242,125 @@ export default function ConferenceRoom({
         data-lk-theme="default"
         className="flex-1 flex flex-col min-h-0"
       >
-        <div className="flex-1 flex flex-col min-h-0 relative">
-          <GoogleMeetVideoInterface />
-          <RoomAudioRenderer />
+        {/* Layout principal */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          {/* Colonne gauche : fiche patient (masquée si plein écran) */}
+          {!isVideoExpanded && <PatientInfoPanel />}
+
+          {/* Colonne droite : vidéo + observation médicale */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* En-tête de la consultation */}
+            <header className="px-6 pt-4 pb-3 border-b border-slate-200 bg-white flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  Consultation en cours
+                </p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">
+                  Observation médicale
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium">
+                  En ligne
+                </span>
+              </div>
+            </header>
+
+            {/* Contenu principal : vidéo + formulaires */}
+            <div
+              className={`flex-1 flex flex-col ${isVideoExpanded ? '' : 'lg:flex-row'} gap-4 p-4 md:p-6 overflow-hidden`}
+            >
+              {/* Bloc vidéo */}
+              <section
+                className={`flex flex-col bg-slate-950 rounded-3xl shadow-md overflow-hidden relative min-h-[260px] ${
+                  isVideoExpanded ? 'flex-1 w-full h-full' : 'lg:w-1/2'
+                }`}
+              >
+                <button
+                  onClick={() => setIsVideoExpanded((v) => !v)}
+                  className="absolute top-3 right-3 z-30 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-white/90 text-slate-800 text-xs font-medium shadow-sm hover:bg-white"
+                  title={isVideoExpanded ? 'Réduire' : 'Étendre la visioconférence'}
+                >
+                  {isVideoExpanded ? (
+                    <>
+                      <Minimize2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Réduire</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Étendre</span>
+                    </>
+                  )}
+                </button>
+                <GoogleMeetVideoInterface />
+                <RoomAudioRenderer />
+              </section>
+
+              {/* Bloc observation médicale / notes */}
+              {!isVideoExpanded && (
+                <section className="lg:w-1/2 flex flex-col gap-3 overflow-y-auto">
+                  <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-4 md:p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Observation médicale
+                      </h3>
+                      <span className="text-xs text-emerald-600 font-medium">
+                        Documenté
+                      </span>
+                    </div>
+                    <div className="space-y-3 text-xs text-slate-700">
+                      <div>
+                        <p className="font-semibold text-slate-800 mb-1">
+                          Interrogatoire
+                        </p>
+                        <p className="text-slate-600">
+                          Plaies douloureuses depuis deux jours. Fatigue modérée,
+                          pas de fièvre rapportée.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800 mb-1">
+                          Examen clinique
+                        </p>
+                        <p className="text-slate-600">
+                          Patient souriant, respiration calme, pas de détresse
+                          respiratoire visible. Coloration cutanée normale.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-4 md:p-5">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-2">
+                      Hypothèse diagnostique / Conclusion
+                    </h3>
+                    <p className="text-xs text-slate-600">
+                      Suspicion d&apos;infection virale bénigne. Poursuivre la
+                      surveillance à domicile avec consignes de réévaluation en
+                      cas d&apos;aggravation des symptômes ou d&apos;apparition
+                      de fièvre.
+                    </p>
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Barre de contrôle visioconférence */}
+            <ControlBarButtons
+              onLeave={onLeave}
+              roomName={roomName}
+              onChatToggle={() => setIsChatOpen(!isChatOpen)}
+            />
+
+            {/* Chat Panel - doit être à l'intérieur du contexte LiveKitRoom */}
+            <ChatPanel
+              isOpen={isChatOpen}
+              onClose={() => setIsChatOpen(false)}
+              userName={userName}
+            />
+          </div>
         </div>
-        <ControlBarButtons 
-          onLeave={onLeave} 
-          roomName={roomName} 
-          onChatToggle={() => setIsChatOpen(!isChatOpen)}
-        />
-        {/* Chat Panel - doit être à l'intérieur du contexte LiveKitRoom */}
-        <ChatPanel 
-          isOpen={isChatOpen} 
-          onClose={() => setIsChatOpen(false)}
-          userName={userName}
-        />
       </LiveKitRoom>
 
       {/* Pop-up "Votre réunion est prête" */}
