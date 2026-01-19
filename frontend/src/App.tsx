@@ -9,6 +9,9 @@ interface RoomState {
   serverUrl: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
+
 function App() {
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
@@ -29,8 +32,9 @@ function App() {
     setIsGeneratingToken(true);
 
     try {
-      const serverUrl = 'ws://localhost:7880';
-      const token = await generateDemoToken(roomName, userName);
+      const serverUrl = LIVEKIT_URL;
+      const token = await generateDemoToken(API_BASE_URL, roomName, userName);
+
 
       // Mettre à jour l'URL avec le paramètre room
       const url = new URL(window.location.href);
@@ -86,8 +90,12 @@ function App() {
   return <PreJoinLobby onJoin={handleJoin} />;
 }
 
-async function generateDemoToken(roomName: string, userName: string): Promise<string> {
-  const response = await fetch(`http://localhost:8000/api/video/token?room=${encodeURIComponent(roomName)}&user=${encodeURIComponent(userName)}`);
+async function generateDemoToken(apiBaseUrl: string, roomName: string, userName: string): Promise<string> {
+  const baseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+  const tokenUrl = `${baseUrl}/api/video/token?room=${encodeURIComponent(roomName)}&user=${encodeURIComponent(userName)}`;
+
+  const response = await fetch(tokenUrl);
+
 
   if (!response.ok) {
     throw new Error('Échec de la génération du token');
