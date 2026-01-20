@@ -5,12 +5,10 @@ import {
   useTracks,
   VideoTrack,
   TrackReference,
-  GridLayout,
-  ParticipantTile,
   useLocalParticipant,
 } from '@livekit/components-react';
 import { Track, Participant } from 'livekit-client';
-import { Users, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ParticipantAvatarProps {
   participant: Participant;
@@ -40,8 +38,10 @@ interface ParticipantVideoProps {
   isMain?: boolean;
 }
 
-function ParticipantVideo({ participant, isLocal = false, isMain = false }: ParticipantVideoProps) {
-  const tracks = useTracks([{ source: Track.Source.Camera, participant }]);
+function  ParticipantVideo({ participant, isLocal = false, isMain = false }: ParticipantVideoProps) {
+  const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]).filter(
+    (track) => track.participant?.identity === participant.identity,
+  );
   const videoTrack = tracks.find((track) => track.publication?.kind === 'video');
 
   const name = participant.name || participant.identity;
@@ -89,15 +89,9 @@ export default function GoogleMeetVideoInterface() {
     { source: Track.Source.ScreenShare, withPlaceholder: false },
   ]);
 
-  const cameraTracks = useTracks([
-    { source: Track.Source.Camera, withPlaceholder: true },
-  ]);
-
   const { remoteParticipants } = useMemo(() => {
     const remote = participants.filter((p) => !p.isLocal);
-    return {
-      remoteParticipants: remote,
-    };
+    return { remoteParticipants: remote };
   }, [participants]);
 
   const hasScreenShare = screenShareTracks.length > 0;
@@ -119,7 +113,7 @@ export default function GoogleMeetVideoInterface() {
   return (
     <div className="h-full w-full flex flex-col bg-[#202124] relative">
       {/* Zone principale de vidéo */}
-      <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center relative overflow-hidden">
         {hasScreenShare ? (
           // Mode partage d'écran
           <div className="w-full h-full flex flex-col relative">
@@ -190,21 +184,20 @@ export default function GoogleMeetVideoInterface() {
             )}
           </div>
         ) : (
-          // Plusieurs participants : utiliser GridLayout pour une meilleure structure
-          <div className="w-full h-full">
-            <GridLayout tracks={cameraTracks} className="h-full">
-              <ParticipantTile />
-            </GridLayout>
-          </div>
-        )}
-
-        {/* Indicateur de nombre de participants */}
-        {totalParticipants > 0 && (
-          <div className="absolute top-6 right-6 z-30 flex items-center space-x-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full">
-            <Users className="w-4 h-4 text-white" />
-            <span className="text-xs text-white">
-              {totalParticipants} {totalParticipants > 1 ? 'participants' : 'participant'}
-            </span>
+          // Deux participants : local en vignette, distant en plein
+          <div className="w-full h-full relative">
+            {/* Remote principal */}
+            {remoteParticipants[0] && (
+              <div className="w-full h-full">
+                <ParticipantVideo participant={remoteParticipants[0]} isMain />
+              </div>
+            )}
+            {/* Local vignette */}
+            {localParticipant && (
+              <div className="absolute top-4 left-4 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48  rounded-lg overflow-hidden shadow-lg border border-white/40 bg-black/60">
+                <ParticipantVideo participant={localParticipant} isLocal isMain />
+              </div>
+            )}
           </div>
         )}
       </div>
