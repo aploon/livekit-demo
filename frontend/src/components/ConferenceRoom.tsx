@@ -25,7 +25,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Track } from 'livekit-client';
-import GoogleMeetVideoInterface from './GoogleMeetVideoInterface';
+import MedicalVideoPanel from './MedicalVideoPanel';
 import ChatPanel from './ChatPanel';
 
 interface ConferenceRoomProps {
@@ -144,10 +144,12 @@ function PatientAdminPanel() {
           </div>
 
           <div className="space-y-1 text-sm text-gray-700">
-            <p>Date de naissance : 15/05/1990 — 20 ans</p>
+            <p>Date de naissance : 15/05/1990 — 34 ans</p>
+            <p>Sexe : Masculin</p>
             <p>Taille : 1m83</p>
             <p>Poids : 89 kg</p>
             <p>Adresse : 22 rue de Moulins, 39200 Actung HB</p>
+            <p>Médecin référent : Dr. Jeanne Dupont (Généraliste)</p>
           </div>
 
           <button className="text-sm text-cyan-500 hover:text-cyan-600 font-medium">
@@ -206,7 +208,7 @@ function PatientAdminPanel() {
         <div className="flex gap-3">
           <AlertCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-gray-700">
-            Important : rappeler au patient les consignes de réévaluation si les symptômes évoluent.
+            Antécédents : asthme modéré, vaccination COVID à jour. Allergie connue : pénicilline.
           </p>
         </div>
       </div>
@@ -300,11 +302,11 @@ function VideoPanel({
       </button>
 
       <div className={`w-full h-full ${!isVideoExpanded ? 'rounded-3xl' : ''} overflow-hidden`}>
-        <GoogleMeetVideoInterface />
+        <MedicalVideoPanel />
         <RoomAudioRenderer />
       </div>
 
-      <div className="absolute bottom-4 right-4 z-30 flex flex-wrap gap-2 sm:gap-3 justify-end">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-wrap gap-2 sm:gap-3 justify-center">
         <ControlButton
           onClick={toggleMic}
           icon={isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -391,8 +393,8 @@ function ObservationPanel({ hidden }: { hidden: boolean }) {
           <div>
             <h3 className="text-base font-semibold text-gray-900 mb-3">Interrogatoire</h3>
             <div className="space-y-2 text-sm text-gray-700">
-              <p>- Plaies douloureuses depuis deux jours</p>
-              <p>- Idées de voyage</p>
+              <p>- Toux sèche depuis 3 jours, fébricule hier soir (37.8°C)</p>
+              <p>- Céphalées légères, pas de dyspnée rapportée</p>
             </div>
           </div>
 
@@ -405,14 +407,14 @@ function ObservationPanel({ hidden }: { hidden: boolean }) {
               </label>
             </div>
             <p className="text-sm text-gray-700">
-              Patient souriant, respiration calme, pas de détresse respiratoire. Coloration cutanée normale.
+              Patient serein, eupnéique, saturation SpO₂ 98% AA, auscultation pulmonaire claire. Pas de signe de détresse respiratoire.
             </p>
           </div>
 
           <div>
             <h3 className="text-base font-semibold text-gray-900">Hypothèse diagnostique / Conclusion</h3>
             <p className="text-sm text-gray-700 mt-2">
-              Suspicion d&apos;infection virale bénigne. Surveillance à domicile, réévaluation si fièvre ou aggravation.
+              Rhinopharyngite virale probable. Traitement symptomatique, hydratation, surveillance. Revue si fièvre &gt; 38.5°C ou dyspnée.
             </p>
           </div>
         </div>

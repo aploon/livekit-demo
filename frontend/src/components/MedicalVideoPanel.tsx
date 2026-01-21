@@ -26,7 +26,7 @@ function ParticipantAvatar({ participant, size = 'large' }: ParticipantAvatarPro
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <div className={`${sizeClasses[size]} rounded-full bg-blue-500 flex items-center justify-center text-white font-medium`}>
+    <div className={`${sizeClasses[size]} rounded-full bg-sky-600 flex items-center justify-center text-white font-medium`}>
       {initial}
     </div>
   );
@@ -38,7 +38,7 @@ interface ParticipantVideoProps {
   isMain?: boolean;
 }
 
-function  ParticipantVideo({ participant, isLocal = false, isMain = false }: ParticipantVideoProps) {
+function ParticipantVideo({ participant, isLocal = false, isMain = false }: ParticipantVideoProps) {
   const tracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }]).filter(
     (track) => track.participant?.identity === participant.identity,
   );
@@ -82,7 +82,7 @@ function  ParticipantVideo({ participant, isLocal = false, isMain = false }: Par
   );
 }
 
-export default function GoogleMeetVideoInterface() {
+export default function MedicalVideoPanel() {
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
   const screenShareTracks = useTracks([
@@ -105,7 +105,7 @@ export default function GoogleMeetVideoInterface() {
       try {
         await localParticipant.setScreenShareEnabled(false);
       } catch (error) {
-        console.error('Erreur lors de l\'arrêt du partage d\'écran:', error);
+        console.error('Erreur lors de l’arrêt du partage d’écran:', error);
       }
     }
   };
@@ -168,11 +168,11 @@ export default function GoogleMeetVideoInterface() {
             {localParticipant ? (
               <ParticipantAvatar participant={localParticipant} size="large" />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-blue-500 flex items-center justify-center text-white text-4xl font-medium">
-                U
+              <div className="w-32 h-32 rounded-full bg-sky-600 flex items-center justify-center text-white text-4xl font-medium">
+                D
               </div>
             )}
-            <p className="text-gray-400 text-sm">En attente de participants...</p>
+            <p className="text-gray-400 text-sm">En attente du patient...</p>
           </div>
         ) : totalParticipants === 1 ? (
           // Un seul participant (soi-même)
@@ -207,3 +207,4 @@ export default function GoogleMeetVideoInterface() {
     </div>
   );
 }
+
