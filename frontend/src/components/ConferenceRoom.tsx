@@ -306,7 +306,7 @@ function VideoPanel({
         <RoomAudioRenderer />
       </div>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-wrap gap-2 sm:gap-3 justify-center">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full z-30 flex flex-wrap gap-2 sm:gap-3 justify-center">
         <ControlButton
           onClick={toggleMic}
           icon={isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}

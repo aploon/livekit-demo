@@ -138,7 +138,7 @@ export default function MedicalVideoPanel() {
                 )}
               </div>
             )}
-            <div className="flex-1 rounded-lg overflow-hidden bg-black mt-12">
+            <div className="flex-1 rounded-lg overflow-hidden bg-black mt-12 flex flex-col">
               {screenShareTracks.map((track) => (
                 <VideoTrack
                   key={track.publication?.trackSid}
@@ -164,7 +164,7 @@ export default function MedicalVideoPanel() {
           </div>
         ) : totalParticipants === 0 ? (
           // Aucun participant
-          <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="flex flex-col items-center justify-center space-y-4 h-full">
             {localParticipant ? (
               <ParticipantAvatar participant={localParticipant} size="large" />
             ) : (
@@ -199,33 +199,47 @@ export default function MedicalVideoPanel() {
           </div>
         ) : (
           // 3+ participants : remotes en grille, local en vignette overlay
-          <div className="w-full h-full relative">
+          <div className="w-full h-full relative flex flex-col">
             <div
               className={
-                `grid gap-3 h-full w-full ` +
-                (
+                [
+                  "grid gap-3 h-full w-full items-stretch",
                   remoteParticipants.length === 1
                     ? "grid-cols-1"
                     : remoteParticipants.length === 2
                     ? "grid-cols-2"
-                    : remoteParticipants.length === 3
-                    ? "grid-cols-2"
-                    : remoteParticipants.length === 4
-                    ? "grid-cols-2"
-                    : remoteParticipants.length > 6
-                    ? "grid-cols-2 md:grid-cols-3"
-                    : "grid-cols-2 md:grid-cols-3"
-                )
+                    : remoteParticipants.length <= 4
+                    ? "grid-cols-2 grid-rows-2"
+                    : remoteParticipants.length <= 6
+                    ? "grid-cols-3 grid-rows-2"
+                    : remoteParticipants.length <= 9
+                    ? "grid-cols-3 grid-rows-3"
+                    : "grid-cols-4 grid-rows-3"
+                ].join(" ")
               }
+              style={{
+                height: "100%",
+                display: "grid",
+                gridTemplateRows:
+                  remoteParticipants.length <= 2
+                    ? "1fr"
+                    : remoteParticipants.length <= 4
+                    ? "1fr 1fr"
+                    : remoteParticipants.length <= 6
+                    ? "1fr 1fr"
+                    : remoteParticipants.length <= 9
+                    ? "1fr 1fr 1fr"
+                    : "1fr 1fr 1fr",
+              }}
             >
               {remoteParticipants.map((participant) => (
-                <div key={participant.identity} className="w-full h-full">
+                <div key={participant.identity} className="w-full h-full min-h-0 min-w-0 flex items-center justify-center">
                   <ParticipantVideo participant={participant} isMain />
                 </div>
               ))}
             </div>
             {localParticipant && (
-              <div className="absolute top-4 left-4 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48 rounded-lg overflow-hidden shadow-lg border border-white/40 bg-black/60">
+              <div className="absolute top-4 left-4 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48 rounded-lg overflow-hidden shadow-lg border border-white/40 bg-black/60 z-20">
                 <ParticipantVideo participant={localParticipant} isLocal isMain />
               </div>
             )}
