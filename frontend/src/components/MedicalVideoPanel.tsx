@@ -183,18 +183,49 @@ export default function MedicalVideoPanel() {
               </div>
             )}
           </div>
-        ) : (
+        ) : remoteParticipants.length <= 1 ? (
           // Deux participants : local en vignette, distant en plein
           <div className="w-full h-full relative">
-            {/* Remote principal */}
             {remoteParticipants[0] && (
               <div className="w-full h-full">
                 <ParticipantVideo participant={remoteParticipants[0]} isMain />
               </div>
             )}
-            {/* Local vignette */}
             {localParticipant && (
-              <div className="absolute top-4 left-4 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48  rounded-lg overflow-hidden shadow-lg border border-white/40 bg-black/60">
+              <div className="absolute top-4 left-4 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48 rounded-lg overflow-hidden shadow-lg border border-white/40 bg-black/60">
+                <ParticipantVideo participant={localParticipant} isLocal isMain />
+              </div>
+            )}
+          </div>
+        ) : (
+          // 3+ participants : remotes en grille, local en vignette overlay
+          <div className="w-full h-full relative">
+            <div
+              className={
+                `grid gap-3 h-full w-full ` +
+                (
+                  remoteParticipants.length === 1
+                    ? "grid-cols-1"
+                    : remoteParticipants.length === 2
+                    ? "grid-cols-2"
+                    : remoteParticipants.length === 3
+                    ? "grid-cols-2"
+                    : remoteParticipants.length === 4
+                    ? "grid-cols-2"
+                    : remoteParticipants.length > 6
+                    ? "grid-cols-2 md:grid-cols-3"
+                    : "grid-cols-2 md:grid-cols-3"
+                )
+              }
+            >
+              {remoteParticipants.map((participant) => (
+                <div key={participant.identity} className="w-full h-full">
+                  <ParticipantVideo participant={participant} isMain />
+                </div>
+              ))}
+            </div>
+            {localParticipant && (
+              <div className="absolute top-4 left-4 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 xl:w-48 xl:h-48 rounded-lg overflow-hidden shadow-lg border border-white/40 bg-black/60">
                 <ParticipantVideo participant={localParticipant} isLocal isMain />
               </div>
             )}
