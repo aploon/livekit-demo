@@ -39,7 +39,6 @@ interface ConferenceRoomProps {
 export default function ConferenceRoom({
   token,
   serverUrl,
-  roomName,
   userName,
   onLeave,
 }: ConferenceRoomProps) {
@@ -58,7 +57,7 @@ export default function ConferenceRoom({
   };
 
   return (
-    <div className={`h-screen ${isVideoExpanded ? 'w-full' : 'max-w-screen-2xl mx-auto'} bg-gray-50 flex overflow-hidden`}>
+    <div className={`min-h-screen ${isVideoExpanded ? 'w-full' : 'max-w-screen-2xl mx-auto'} bg-gray-50 flex`}>
       <LiveKitRoom
         video
         audio
@@ -70,23 +69,31 @@ export default function ConferenceRoom({
         className="flex-1 flex flex-col min-h-0"
       >
         <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          {/* Panneau patient - en bas sur mobile, à gauche sur desktop */}
           <div
-            className={`transition-all duration-300 ${
-              isVideoExpanded ? 'w-0 opacity-0 overflow-hidden' : 'w-full md:w-1/2 p-4 md:p-6'
+            className={`transition-all duration-300 order-2 md:order-1 ${
+              isVideoExpanded ? 'w-0 opacity-0 overflow-hidden' : 'w-full md:w-1/2 p-4 md:p-6 flex-shrink-0'
             } bg-white border-r border-gray-200 overflow-y-auto`}
           >
             <PatientAdminPanel />
           </div>
 
-          <div className={`flex-1 transition-all duration-300 ${isVideoExpanded ? 'w-full' : ''} ${isVideoExpanded ? 'h-screen' : ''}`}>
-            <div className={`h-full flex flex-col ${isVideoExpanded ? 'overflow-hidden' : ''}`}>
+          {/* Panneau vidéo + observation - en haut sur mobile, à droite sur desktop */}
+          <div className={`flex-1 transition-all duration-300 min-w-0 order-1 md:order-2 ${isVideoExpanded ? 'w-full' : ''} ${isVideoExpanded ? 'h-screen' : ''}`}>
+            <div className={`h-full flex flex-col min-h-0`}>
 
-              <VideoPanel
-                isVideoExpanded={isVideoExpanded}
-                onToggleExpand={() => setIsVideoExpanded((v) => !v)}
-                onLeave={onLeave}
-                onChatToggle={() => setIsChatOpen((v) => !v)}
-              />
+              {/* Visio "fixe" en haut sur mobile */}
+              <div className={`${isVideoExpanded ? '' : 'md:relative fixed top-0 left-0 right-0 z-30 md:z-auto'} bg-gray-50`}>
+                <VideoPanel
+                  isVideoExpanded={isVideoExpanded}
+                  onToggleExpand={() => setIsVideoExpanded((v) => !v)}
+                  onLeave={onLeave}
+                  onChatToggle={() => setIsChatOpen((v) => !v)}
+                />
+              </div>
+
+              {/* Padding pour compenser la visio fixe sur mobile */}
+              <div className={`${isVideoExpanded ? '' : 'md:hidden'} h-[320px] sm:h-[420px] lg:h-[480px] flex-shrink-0`} />
 
               <ObservationPanel hidden={isVideoExpanded} />
 
